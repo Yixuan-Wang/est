@@ -1,0 +1,12 @@
+[package]
+name = "est_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.7.*", features = ["macros"] }
+serde = { version = "1.0.215", features = ["derive"] }
+slotmap = "1.0.7"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+url = "2.5.3"
+winnow = "0.6.20"

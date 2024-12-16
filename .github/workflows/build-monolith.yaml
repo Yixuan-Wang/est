@@ -1,0 +1,27 @@
+name: Build and Dockerize Monolith
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-dockerize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t tomyxw/est_server:latest packages/est_server
+
+      - name: Save Docker image to file
+        run: |
+          docker save tomyxw/est_server:latest -o est_server.tar
+
+      - name: Upload Docker image to GitHub
+        uses: actions/upload-artifact@v2
+        with:
+          name: est_server-${{ github.sha }}
+          path: est_server.tar

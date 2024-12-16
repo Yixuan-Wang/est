@@ -1,18 +1,22 @@
 //! Search engines.
-//! 
+//!
 //! Each search engine should be capable of
-//! - [`Search`]: transform a query into a 
+//! - [`Search`]: transform a query into a
 
-use crate::query::Query;
+use crate::{common::Result, query::Query};
 
-use std::{borrow::{Borrow, Cow}, ops::{Deref, DerefMut}, sync::Arc};
 use slotmap::{new_key_type, SlotMap};
+use std::{
+    borrow::Borrow,
+    ops::{Deref, DerefMut},
+    sync::Arc,
+};
 use tokio::sync::RwLock;
 use url::Url;
 
 pub trait Engine {
     /// Accepts a query and returns a SearchAction.
-    fn search(&self, query: &Query) -> SearchResult;
+    fn execute(&self, query: &Query) -> Result<ExecuteAction>;
 }
 
 new_key_type! {
@@ -56,23 +60,25 @@ impl ArenaEngine {
         })
     }
 
-    pub fn insert_iter<I, E>(&mut self, engines: I) -> impl Iterator<Item = HandleEngine> + use<'_, I, E>
+    pub fn insert_iter<I, E>(
+        &mut self,
+        engines: I,
+    ) -> impl Iterator<Item = HandleEngine> + use<'_, I, E>
     where
         I: IntoIterator<Item = E>,
         E: Engine + 'static + Send + Sync,
     {
-        engines
-            .into_iter()
-            .map(|engine| self.insert(engine))
+        engines.into_iter().map(|engine| self.insert(engine))
     }
-
 
     pub fn pop(&mut self, handle: HandleEngine) -> Option<RefEngine> {
         self.arena.remove(handle)
     }
 
     pub fn remove(&mut self, handle: HandleEngine) {
-        let Some(_) = self.arena.remove(handle) else { return };
+        let Some(_) = self.arena.remove(handle) else {
+            return;
+        };
     }
 
     pub fn get(&self, handle: HandleEngine) -> Option<Arc<RwLock<dyn Engine + Send + Sync>>> {
@@ -81,29 +87,20 @@ impl ArenaEngine {
     }
 }
 
-
-pub type SearchResult = Result<SearchAction, SearchError>;
-
 #[derive(Debug)]
-pub enum SearchError {
-    Incomplete,
-    Backtrack,
-    Cut,
-}
-
-#[derive(Debug)]
-pub enum SearchAction {
+#[non_exhaustive]
+pub enum ExecuteAction {
     /// Redirect to a URL.
     /// The constructor must guarantee the URL is valid.
     /// Use [`SearchAction::redirect_to`] or [`SearchAction::redirect_to_query`] to build this action.
     Redirect(String),
 }
 
-impl SearchAction {
+impl ExecuteAction {
     /// A helper function to build a [`SearchAction::Redirect`] action with a string.
     #[inline]
     pub fn redirect_to(url: &str) -> Self {
-        SearchAction::Redirect(Url::parse(url).unwrap().to_string())
+        ExecuteAction::Redirect(Url::parse(url).unwrap().to_string())
     }
 
     /// A helper function to build a [`SearchAction::Redirect`] action with a base URL and an iterator of queries.
@@ -115,7 +112,7 @@ impl SearchAction {
         K: AsRef<str>,
         V: AsRef<str>,
     {
-        SearchAction::Redirect(
+        ExecuteAction::Redirect(
             url::Url::parse_with_params(base, queries)
                 .unwrap()
                 .to_string(),

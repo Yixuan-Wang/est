@@ -1,37 +1,89 @@
-//! Router
+//! A router determines which engine to use for a given query.
 //!
-//! A router is
+//! Routing is expected to be deterministic and fast. It must be idempotent to queries.
+//! Computation-heavy operations should be implemented inside an engine, not a router.
+//! Static routers are preferred, but you may use dynamic routers if necessary.
+//!
+//! Normally, you don't need to implement a router yourself.
+//! This module provides a set of useful routers for you to use.
+//! Arbitrary routers (`Arc<dyn Router + Send + Sync>`) can be combined using standard library's `HashMap` and `Vec`.
+//! A fixed number of routers with definitive type can be combined using tuples.
+//! An engine handle can be directly used as a router.
 
-use crate::engine::{Engine, HandleEngine};
-use crate::query::{Query, QueryMention};
+use crate::common::{Fail::*, Result};
+use crate::engine::HandleEngine;
+use crate::query::Query;
 use std::collections::HashMap;
-use std::hash::Hash;
-use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-#[derive(Debug)]
-pub enum ErrorRouting {
-    Incomplete,
+/// The type of a routing result.
+pub enum RouteTy {
+    /// A static routing result.
+    /// This guanrantees another query who *shares the same prefix* will be guaranteed to route to the same engine.
+    Static,
+
+    /// A dynamic routing result.
+    /// No assumption can be made about the routing result of another query.
+    Dynamic,
 }
 
-pub type Result<T> = std::result::Result<T, ErrorRouting>;
+/// A routing result.
+pub struct Route {
+    /// The type of this routing result.
+    pub ty: RouteTy,
 
-pub trait Router<E = ()> {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>>;
+    /// The engine to route to, represented by handle.
+    pub engine: HandleEngine,
+}
+
+impl Route {
+    #[inline]
+    pub fn new_static(engine: HandleEngine) -> Self {
+        Route {
+            ty: RouteTy::Static,
+            engine,
+        }
+    }
+
+    #[inline]
+    pub fn new_dynamic(engine: HandleEngine) -> Self {
+        Route {
+            ty: RouteTy::Dynamic,
+            engine,
+        }
+    }
+}
+
+/// A [`Router`] is capable of routing a query to an engine.
+pub trait Router {
+    /// Try to route a query to an engine, given by a [`Route`].
+    ///
+    /// - If the query is successfully routed, return `Ok(Some(Route))`.
+    /// - If the query cannot match any engine, return `Ok(None)`.
+    /// - If an error happens, return an `Err` with [`crate::common::Fail`].
+    ///
+    /// If a child router cannot match any engine, the parent router should try the next child
+    /// without failing instantly.
+    /// However, if a child router reports an error, the parent router should propagate the error.
+    ///
+    /// Notice that the router **may** mutate the query.
+    fn route(&self, query: &mut Query) -> Result<Option<Route>>;
 }
 
 impl Router for Arc<dyn Router + Send + Sync> {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
         self.as_ref().route(query)
     }
 }
 
-pub struct RouterMapLeaf(HashMap<String, HandleEngine>);
+/// A specialized [`RouterMap`] that stores bare engines, as leaves of a routing tree.
+/// This is particularly useful and efficient for clustering engines together.
+pub struct RouterMapLeaves(HashMap<String, HandleEngine>);
 
-impl RouterMapLeaf {
+impl RouterMapLeaves {
     pub fn new(map: HashMap<String, HandleEngine>) -> Self {
-        RouterMapLeaf(map)
+        RouterMapLeaves(map)
     }
 
     pub fn merge(&mut self, other: Self) {
@@ -39,17 +91,23 @@ impl RouterMapLeaf {
     }
 }
 
-impl std::ops::Add for RouterMapLeaf {
+impl From<HashMap<String, HandleEngine>> for RouterMapLeaves {
+    fn from(map: HashMap<String, HandleEngine>) -> Self {
+        RouterMapLeaves(map)
+    }
+}
+
+impl std::ops::Add for RouterMapLeaves {
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
         let mut map = self.0;
         map.extend(other.0);
-        RouterMapLeaf(map)
+        RouterMapLeaves(map)
     }
 }
 
-impl Deref for RouterMapLeaf {
+impl Deref for RouterMapLeaves {
     type Target = HashMap<String, HandleEngine>;
 
     fn deref(&self) -> &Self::Target {
@@ -57,18 +115,15 @@ impl Deref for RouterMapLeaf {
     }
 }
 
-impl DerefMut for RouterMapLeaf {
+impl DerefMut for RouterMapLeaves {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl Router for RouterMapLeaf {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
-        let segment = query
-            .mention
-            .residue()
-            .first();
+impl Router for RouterMapLeaves {
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
+        let segment = query.mention.residue().first();
 
         let Some(segment) = segment else {
             return Ok(None);
@@ -77,53 +132,20 @@ impl Router for RouterMapLeaf {
         let Some(engine) = self.0.get(*segment) else {
             return Ok(None);
         };
-        
+
         query.mention.resolve_one();
-        Ok(Some(*engine))
+        Ok(Some(Route::new_static(*engine)))
     }
 }
 
-pub struct RouterMapLayer(HashMap<String, Arc<dyn Router + Send + Sync>>);
+/// A [`RouterMap`] is a map of arbitrary routers, each associated with a unique prefix.
+pub type RouterMap = HashMap<String, Arc<dyn Router + Send + Sync>>;
 
-impl RouterMapLayer {
-    pub fn new(map: HashMap<String, Arc<dyn Router + Send + Sync>>) -> Self {
-        RouterMapLayer(map)
-    }
-}
+impl Router for RouterMap {
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
+        let segment = query.mention.residue().first().ok_or(Incomplete)?;
 
-impl std::ops::Add for RouterMapLayer {
-    type Output = Self;
-
-    fn add(self, other: Self) -> Self::Output {
-        let mut map = self.0;
-        map.extend(other.0);
-        RouterMapLayer(map)
-    }
-}
-
-impl Deref for RouterMapLayer {
-    type Target = HashMap<String, Arc<dyn Router + Send + Sync>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for RouterMapLayer {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl Router for RouterMapLayer {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
-        let segment = query
-            .mention
-            .residue()
-            .first()
-            .ok_or(ErrorRouting::Incomplete)?;
-
-        let Some(router) = self.0.get(*segment) else {
+        let Some(router) = self.get(*segment) else {
             return Ok(None);
         };
 
@@ -132,32 +154,54 @@ impl Router for RouterMapLayer {
     }
 }
 
-pub struct RouterFunc<F>(pub F)
-where
-    F: Fn(&Query) -> Result<Option<HandleEngine>>;
+/// A [`RouterVec`] is a vector of arbitrary routers, processed in order.
+pub type RouterVec = Vec<Arc<dyn Router + Send + Sync>>;
 
-impl<F> Router for RouterFunc<F>
+impl Router for RouterVec {
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
+        for router in self.iter() {
+            match router.route(query)? {
+                Some(route) => return Ok(Some(route)),
+                None => (),
+            }
+        }
+
+        Ok(None)
+    }
+}
+
+/// A dynamic function to route a query to an engine.
+/// This is useful for dynamic routing.
+///
+/// Note that the function must be [`Fn`], which means it can be called multiple
+/// times without mutating its internal state.
+pub struct RouterFn<F>(pub F)
 where
-    F: Fn(&Query) -> Result<Option<HandleEngine>>
+    F: Fn(&mut Query) -> Result<Option<Route>>;
+
+impl<F> Router for RouterFn<F>
+where
+    F: Fn(&mut Query) -> Result<Option<Route>>,
 {
-    fn route(
-        &self,
-        query: &mut Query,
-    ) -> Result<Option<HandleEngine>> {
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
         self.0(query)
     }
 }
 
 impl Router for HandleEngine {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
-        Ok(Some(*self))
+    fn route(&self, _query: &mut Query) -> Result<Option<Route>> {
+        Ok(Some(Route::new_static(*self)))
     }
 }
 
-pub struct Terminal<R: Router>(pub R);
+/// A router that only routes to its inner router if no more segments
+/// are left in the mention of the query.
+///
+/// This can be used to implement a fallback router.
+pub struct RouterTerminal<R: Router>(pub R);
 
-impl<R: Router> Router for Terminal<R> {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
+impl<R: Router> Router for RouterTerminal<R> {
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
         if query.mention.residue().is_empty() {
             self.0.route(query)
         } else {
@@ -167,17 +211,13 @@ impl<R: Router> Router for Terminal<R> {
 }
 
 impl<R: Router> Router for (String, R) {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
-        let (prefix, engine) = self;
-        let segment = query
-            .mention
-            .residue()
-            .first()
-            .ok_or(ErrorRouting::Incomplete)?;
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
+        let (prefix, router) = self;
+        let segment = query.mention.residue().first().ok_or(Incomplete)?;
 
         if prefix == *segment {
             query.mention.resolve_one();
-            engine.route(query)
+            router.route(query)
         } else {
             Ok(None)
         }
@@ -185,17 +225,13 @@ impl<R: Router> Router for (String, R) {
 }
 
 impl<R: Router> Router for (&str, R) {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
-        let (prefix, engine) = self;
-        let segment = query
-            .mention
-            .residue()
-            .first()
-            .ok_or(ErrorRouting::Incomplete)?;
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
+        let (prefix, router) = self;
+        let segment = query.mention.residue().first().ok_or(Incomplete)?;
 
         if prefix == segment {
             query.mention.resolve_one();
-            engine.route(query)
+            router.route(query)
         } else {
             Ok(None)
         }
@@ -211,7 +247,7 @@ macro_rules! impl_router_for_tuple {
             fn route(
                 &self,
                 query: &mut Query,
-            ) -> Result<Option<HandleEngine>> {
+            ) -> Result<Option<Route>> {
                 $(
                     match self.$idx.route(query)? {
                         val @ Some(_) => return Ok(val),
@@ -238,49 +274,77 @@ impl_router_for_tuple!(E0 0, E1 1, E2 2, E3 3, E4 4, E5 5, E6 6, E7 7, E8 8, E9 
 impl_router_for_tuple!(E0 0, E1 1, E2 2, E3 3, E4 4, E5 5, E6 6, E7 7, E8 8, E9 9, E10 10, E11 11);
 
 impl Router for () {
-    fn route(&self, _query: &mut Query) -> Result<Option<HandleEngine>> {
+    fn route(&self, _query: &mut Query) -> Result<Option<Route>> {
         Ok(None)
     }
 }
 
-pub struct Final<R: Router>(pub R);
+/// A router that asserts the inner router must route to an engine successfully.
+/// Otherwise it will short-circuit the routing process and propagate the error.
+pub struct RouterAssert<R: Router>(pub R);
 
-impl<R> Router for Final<R>
+impl<R> Router for RouterAssert<R>
 where
     R: Router,
 {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
         let result = self.0.route(query)?;
 
         if result.is_some() {
             Ok(result)
         } else {
-            Err(ErrorRouting::Incomplete)
+            Err(Incomplete)
         }
     }
 }
 
+/// A router that prints debug information to the stdout in debug mode.
+///
+/// It will print during its entry and exit.
+/// During its exit, it will print whether the routing is successful or not.
 pub struct RouterDebug<R: Router>(pub R, pub &'static str);
 
 impl<R> Router for RouterDebug<R>
 where
     R: Router,
 {
-    fn route(&self, query: &mut Query) -> Result<Option<HandleEngine>> {
-        #[cfg(debug_assertions)] println!("{}: Enter {:?} {:?}", self.1, query.mention.resolved(), query.mention.residue());
+    fn route(&self, query: &mut Query) -> Result<Option<Route>> {
+        #[cfg(debug_assertions)]
+        println!(
+            "{}: Enter {:?} {:?}",
+            self.1,
+            query.mention.resolved(),
+            query.mention.residue()
+        );
         let result = self.0.route(query);
 
-        #[cfg(debug_assertions)] 
+        #[cfg(debug_assertions)]
         match &result {
             Ok(Some(_)) => {
-                println!("{}: Ok(Some) {:?} {:?}", self.1, query.mention.resolved(), query.mention.residue());
+                println!(
+                    "{}: Ok(Some) {:?} {:?}",
+                    self.1,
+                    query.mention.resolved(),
+                    query.mention.residue()
+                );
             }
             Ok(None) => {
-                println!("{}: Ok(None) {:?} {:?}", self.1, query.mention.resolved(), query.mention.residue());
+                println!(
+                    "{}: Ok(None) {:?} {:?}",
+                    self.1,
+                    query.mention.resolved(),
+                    query.mention.residue()
+                );
             }
             Err(err) => {
-                println!("{}: Err({:?}) {:?} {:?}", self.1, err, query.mention.resolved(), query.mention.residue());
-            }   
+                println!(
+                    "{}: Err({:?}) {:?} {:?}",
+                    self.1,
+                    err,
+                    query.mention.resolved(),
+                    query.mention.residue()
+                );
+            }
         }
         result
     }

@@ -1,17 +1,16 @@
 use std::{collections::HashMap, sync::LazyLock};
 
 use crate::{
-    engine::{ArenaEngine, Engine, SearchAction, SearchResult},
-    query::Query, router::Router,
+    common::Result,
+    engine::{ArenaEngine, Engine, ExecuteAction},
+    query::Query,
+    router::Router,
 };
 
 pub struct PluginJavascript;
 
 impl PluginJavascript {
-    pub fn router(
-        &self,
-        arena: &mut ArenaEngine,
-    ) -> impl Router {
+    pub fn router(&self, arena: &mut ArenaEngine) -> impl Router {
         let handle = arena.insert(EngineJavascript);
 
         handle
@@ -66,7 +65,6 @@ static MAP_JAVASCRIPT_HANDLE_TO_SITE: LazyLock<HashMap<&str, &str>> = LazyLock::
     map.insert("puppeteer", "pptr.dev");
     map.insert("playwright", "playwright.dev");
 
-
     // CSS
     map.insert("tailwind", "tailwindcss.com");
     map.insert("pico", "picocss.com");
@@ -78,10 +76,10 @@ static MAP_JAVASCRIPT_HANDLE_TO_SITE: LazyLock<HashMap<&str, &str>> = LazyLock::
 });
 
 impl EngineJavascript {
-    fn search_fallback(&self, query: &Query) -> SearchResult {
-        if let Some(handle) = query.mention().get(1) {
+    fn search_fallback(&self, query: &Query) -> Result<ExecuteAction> {
+        if let Some(handle) = query.residue().get(1) {
             if MAP_JAVASCRIPT_HANDLE_TO_SITE.contains_key(handle) {
-                return Ok(SearchAction::redirect_to_query(
+                return Ok(ExecuteAction::redirect_to_query(
                     "https://google.com/search",
                     &[(
                         "q",
@@ -95,9 +93,14 @@ impl EngineJavascript {
             }
         };
 
-        let handle = query.mention().get(1..).map(|parts| parts.join(" ")).map(|s| format!("{} ", s)).unwrap_or_default();
+        let handle = query
+            .residue()
+            .get(1..)
+            .map(|parts| parts.join(" "))
+            .map(|s| format!("{} ", s))
+            .unwrap_or_default();
 
-        Ok(SearchAction::redirect_to_query(
+        Ok(ExecuteAction::redirect_to_query(
             "https://www.google.com/search",
             &[("q", format!("javascript {}{}", handle, query.content()))],
         ))
@@ -105,33 +108,33 @@ impl EngineJavascript {
 }
 
 impl Engine for EngineJavascript {
-    fn search(&self, query: &Query) -> SearchResult {
-        match query.mention().get(1..) {
-            None | Some([]) | Some(["mdn"]) => Ok(SearchAction::redirect_to_query(
+    fn execute(&self, query: &Query) -> Result<ExecuteAction> {
+        match query.residue().get(1..) {
+            None | Some([]) | Some(["mdn"]) => Ok(ExecuteAction::redirect_to_query(
                 "https://developer.mozilla.org/en-US/search",
                 &[("q", query.content())],
             )),
-            Some(["npm"]) => Ok(SearchAction::redirect_to_query(
+            Some(["npm"]) => Ok(ExecuteAction::redirect_to_query(
                 "https://www.npmjs.com/search",
                 &[("q", query.content())],
             )),
-            Some(["jsr"]) => Ok(SearchAction::redirect_to_query(
+            Some(["jsr"]) => Ok(ExecuteAction::redirect_to_query(
                 "https://jsr.io/packages",
                 &[("search", query.content())],
             )),
-            Some(["node"]) => Ok(SearchAction::redirect_to_query(
+            Some(["node"]) => Ok(ExecuteAction::redirect_to_query(
                 "https://nodejs.org/en/search",
                 &[("q", query.content())],
             )),
-            Some(["uno"]) => Ok(SearchAction::redirect_to_query(
+            Some(["uno"]) => Ok(ExecuteAction::redirect_to_query(
                 "https://unocss.dev/interactive",
                 &[("s", query.content())],
             )),
-            Some(["icones"]) => Ok(SearchAction::redirect_to_query(
+            Some(["icones"]) => Ok(ExecuteAction::redirect_to_query(
                 "https://icones.netlify.app/collection/all",
                 &[("s", query.content())],
             )),
-            Some(["caniuse"]) => Ok(SearchAction::redirect_to_query(
+            Some(["caniuse"]) => Ok(ExecuteAction::redirect_to_query(
                 "https://caniuse.com/",
                 &[("search", query.content())],
             )),

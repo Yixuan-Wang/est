@@ -2,7 +2,8 @@ name: Build and Dockerize Monolith
 
 on:
   push:
-    branches: [ main ]
+    branches: [ monolith ]
+  workflow_dispatch:
 
 jobs:
   build-and-dockerize:
@@ -11,6 +12,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
+        with:
+          ref: monolith
 
       - name: Build Docker image
         run: |

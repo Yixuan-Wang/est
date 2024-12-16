@@ -46,6 +46,12 @@ impl DerefMut for RefEngine {
     }
 }
 
+impl Default for ArenaEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ArenaEngine {
     pub fn new() -> Self {
         ArenaEngine {

@@ -24,8 +24,8 @@ fn parse_mention<'i>(input: &mut &'i str) -> PResult<Vec<&'i str>> {
     .parse_next(input)
 }
 
-pub(super) fn parse_query<'i>(input: &'i str) -> PResult<Query<'i>> {
-    let (input, mention) = opt(parse_mention).parse_peek(&input)?;
+pub(super) fn parse_query(input: &str) -> PResult<Query<'_>> {
+    let (input, mention) = opt(parse_mention).parse_peek(input)?;
 
     Ok(Query {
         mention: mention.unwrap_or_default().into(),

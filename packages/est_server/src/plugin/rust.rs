@@ -13,6 +13,12 @@ use crate::{
 
 pub struct PluginRust;
 
+impl Default for PluginRust {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PluginRust {
     pub fn new() -> Self {
         PluginRust

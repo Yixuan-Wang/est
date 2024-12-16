@@ -11,6 +11,12 @@ use crate::{
 
 pub struct PluginPython;
 
+impl Default for PluginPython {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PluginPython {
     pub fn new() -> Self {
         PluginPython

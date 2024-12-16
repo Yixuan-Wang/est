@@ -160,10 +160,7 @@ pub type RouterVec = Vec<Arc<dyn Router + Send + Sync>>;
 impl Router for RouterVec {
     fn route(&self, query: &mut Query) -> Result<Option<Route>> {
         for router in self.iter() {
-            match router.route(query)? {
-                Some(route) => return Ok(Some(route)),
-                None => (),
-            }
+            if let Some(route) = router.route(query)? { return Ok(Some(route)) }
         }
 
         Ok(None)

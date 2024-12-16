@@ -24,6 +24,12 @@ impl CharExt for char {
 
 pub struct PluginSearch;
 
+impl Default for PluginSearch {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PluginSearch {
     pub fn new() -> Self {
         PluginSearch
@@ -61,7 +67,7 @@ impl PluginSearch {
         let engine_github = arena.insert(EngineYixuanFavorite::Github);
         let engine_wiktionary = arena.insert(EngineYixuanFavorite::Wiktionary);
         let engine_merriamwebster = arena.insert(EngineYixuanFavorite::MerriamWebster);
-        let engine_oed = arena.insert(EngineYixuanFavorite::OED);
+        let engine_oed = arena.insert(EngineYixuanFavorite::Oed);
         let engine_perplexity = arena.insert(EngineYixuanFavorite::Perplexity);
         let engine_zitools = arena.insert(EngineYixuanFavorite::ZiTools);
         let engine_jisho = arena.insert(EngineYixuanFavorite::Jisho);
@@ -249,7 +255,7 @@ enum EngineYixuanFavorite {
     Github,
     Wiktionary,
     MerriamWebster,
-    OED,
+    Oed,
     Perplexity,
     ZiTools,
     Jisho,
@@ -292,7 +298,7 @@ impl Engine for EngineYixuanFavorite {
                 .map(|url| url.to_string())
                 .unwrap_or_else(|_| "https://www.merriam-webster.com".to_string()),
             )),
-            EngineYixuanFavorite::OED => Ok(ExecuteAction::redirect_to_query(
+            EngineYixuanFavorite::Oed => Ok(ExecuteAction::redirect_to_query(
                 "https://www.oed.com/search/dictionary",
                 &[("scope", "Entries"), ("q", query.content())],
             )),

@@ -24,7 +24,7 @@ jobs:
           docker save tomyxw/est_server:latest -o est_server.tar
 
       - name: Upload Docker image to GitHub
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: est_server-${{ github.sha }}
+          name: est_server.${{ github.sha }}.tar
           path: est_server.tar

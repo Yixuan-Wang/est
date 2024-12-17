@@ -16,34 +16,51 @@ struct AppState {
     router: Box<dyn router::Router + Send + Sync>,
 }
 
+mod main {
+    pub(super) fn prepare_config() -> Option<toml::Value> {
+        let config = std::fs::read_to_string("config.toml").unwrap_or_else(|err| {
+            eprintln!("Cannot find `config.toml`: {}, using default config.", err);
+            include_str!("asset/config.default.toml").to_string()
+        });
+        toml::from_str(&config)
+            .map_err(|e| {
+                eprintln!("Failed to parse config file: {}", e);
+            })
+            .ok()
+    }
+}
+
 #[tokio::main]
 async fn main() {
-    // let plugins = plugin::GroupedPlugins {
-    //     plugins: vec![
-    //         Box::new(plugin::python::PluginPython::new()),
-    //         Box::new(plugin::javascript::PluginJavascript),
-    //         Box::new(plugin::search::PluginSearch::new())
-    //     ],
-    // };
+    let Some(config) = main::prepare_config() else {
+        eprintln!("Failed to load config file.");
+        return;
+    };
+
     let plugin_python = plugin::python::PluginPython::new();
     let plugin_javascript = plugin::javascript::PluginJavascript;
     let plugin_search = plugin::search::PluginSearch::new();
     let plugin_rust = plugin::rust::PluginRust::new();
 
-    let mut arena = engine::ArenaEngine::new();
-    let router_python: Arc<dyn router::Router + Send + Sync> =
-        Arc::new(plugin_python.router(&mut arena));
-    let router_javascript: Arc<dyn router::Router + Send + Sync> =
-        Arc::new(plugin_javascript.router(&mut arena));
-    let router_rust: Arc<dyn router::Router + Send + Sync> =
-        Arc::new(plugin_rust.router(&mut arena));
-    let (router_search, router_search_fallback) = plugin_search.router(&mut arena);
-    let router_search_fallback: Arc<dyn router::Router + Send + Sync> =
-        Arc::new(router_search_fallback);
+    let plugin_simple = plugin::simple::PluginSimple::from_config(&config);
 
+    let mut arena = engine::ArenaEngine::new();
+
+    type DynRouter = Arc<dyn router::Router + Send + Sync>;
+
+    let router_python: DynRouter = Arc::new(plugin_python.router(&mut arena));
+    let router_javascript: DynRouter = Arc::new(plugin_javascript.router(&mut arena));
+    let router_rust: DynRouter = Arc::new(plugin_rust.router(&mut arena));
+    let (router_search, router_search_fallback) = plugin_search.router(&mut arena);
+    let router_simple: DynRouter = Arc::new(plugin_simple.router(&mut arena));
+    let router_search_fallback: DynRouter = Arc::new(router_search_fallback);
+
+    // FIXME: The main router is growing too large.
+    //        All hashmap should be ideally merged together.
     let router = (
         router::RouterTerminal(Arc::clone(&router_search_fallback)),
         router_search,
+        router_simple,
         std::collections::HashMap::from([
             (String::from("py"), router_python),
             (String::from("js"), router_javascript),

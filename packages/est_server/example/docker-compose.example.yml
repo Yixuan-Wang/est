@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  est:
+    image: tomyxw/est_server:latest
+    restart: always
+    ports:
+      - ${PORT}:3000
+    volumes:
+      - ./config.toml:/app/config.toml

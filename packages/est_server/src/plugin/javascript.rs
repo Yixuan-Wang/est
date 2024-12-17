@@ -11,8 +11,6 @@ pub struct PluginJavascript;
 
 impl PluginJavascript {
     pub fn router(&self, arena: &mut ArenaEngine) -> impl Router {
-        
-
         arena.insert(EngineJavascript)
     }
 }

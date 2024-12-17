@@ -61,22 +61,6 @@ impl PluginSearch {
         let engine_wikipedia = arena.insert(EngineWikipedia);
         let engine_baidu = arena.insert(EngineChina::Baidu);
         let engine_sogou = arena.insert(EngineChina::Sogou);
-        let engine_scholar = arena.insert(EngineYixuanFavorite::GoogleScholar);
-        let engine_arxiv = arena.insert(EngineYixuanFavorite::Arxiv);
-        let engine_openreview = arena.insert(EngineYixuanFavorite::OpenReview);
-        let engine_github = arena.insert(EngineYixuanFavorite::Github);
-        let engine_wiktionary = arena.insert(EngineYixuanFavorite::Wiktionary);
-        let engine_merriamwebster = arena.insert(EngineYixuanFavorite::MerriamWebster);
-        let engine_oed = arena.insert(EngineYixuanFavorite::Oed);
-        let engine_perplexity = arena.insert(EngineYixuanFavorite::Perplexity);
-        let engine_zitools = arena.insert(EngineYixuanFavorite::ZiTools);
-        let engine_jisho = arena.insert(EngineYixuanFavorite::Jisho);
-        let engine_zhihu = arena.insert(EngineYixuanFavorite::Zhihu);
-        let engine_douban = arena.insert(EngineYixuanFavorite::Douban);
-        let engine_bilibili = arena.insert(EngineYixuanFavorite::Bilibili);
-        let engine_weibo = arena.insert(EngineYixuanFavorite::Weibo);
-        let engine_xiaohongshu = arena.insert(EngineYixuanFavorite::Xiaohongshu);
-        let engine_youtube = arena.insert(EngineYixuanFavorite::YouTube);
 
         let map = RouterMapLeaves::new(HashMap::from([
             (String::from("g"), engine_google),
@@ -91,37 +75,6 @@ impl PluginSearch {
             (String::from("ddg"), engine_ddg),
             (String::from("w"), engine_wikipedia),
             (String::from("wiki"), engine_wikipedia),
-            (String::from("gs"), engine_scholar),
-            (String::from("scholar"), engine_scholar),
-            (String::from("ax"), engine_arxiv),
-            (String::from("arxiv"), engine_arxiv),
-            (String::from("or"), engine_openreview),
-            (String::from("openreview"), engine_openreview),
-            (String::from("gh"), engine_github),
-            (String::from("github"), engine_github),
-            (String::from("wd"), engine_wiktionary),
-            (String::from("wikt"), engine_wiktionary),
-            (String::from("mw"), engine_merriamwebster),
-            (String::from("merriamwebster"), engine_merriamwebster),
-            (String::from("oed"), engine_oed),
-            (String::from("ppl"), engine_perplexity),
-            (String::from("perplexity"), engine_perplexity),
-            (String::from("zi"), engine_zitools),
-            (String::from("zitools"), engine_zitools),
-            (String::from("ji"), engine_jisho),
-            (String::from("jisho"), engine_jisho),
-            (String::from("zh"), engine_zhihu),
-            (String::from("zhihu"), engine_zhihu),
-            (String::from("db"), engine_douban),
-            (String::from("douban"), engine_douban),
-            (String::from("bl"), engine_bilibili),
-            (String::from("bilibili"), engine_bilibili),
-            (String::from("wb"), engine_weibo),
-            (String::from("weibo"), engine_weibo),
-            (String::from("xhs"), engine_xiaohongshu),
-            (String::from("xiaohongshu"), engine_xiaohongshu),
-            (String::from("yt"), engine_youtube),
-            (String::from("youtube"), engine_youtube),
         ]));
 
         let fallback = move |query: &Query| {
@@ -244,103 +197,5 @@ impl Engine for EngineWikipedia {
             lang,
             &[("search", query.content())],
         ))
-    }
-}
-
-#[derive(Clone, Copy)]
-enum EngineYixuanFavorite {
-    GoogleScholar,
-    Arxiv,
-    OpenReview,
-    Github,
-    Wiktionary,
-    MerriamWebster,
-    Oed,
-    Perplexity,
-    ZiTools,
-    Jisho,
-    Zhihu,
-    Douban,
-    Bilibili,
-    Weibo,
-    Xiaohongshu,
-    YouTube,
-}
-
-impl Engine for EngineYixuanFavorite {
-    fn execute(&self, query: &Query) -> Result<ExecuteAction> {
-        match self {
-            EngineYixuanFavorite::GoogleScholar => Ok(ExecuteAction::redirect_to_query(
-                "https://scholar.google.com/scholar",
-                &[("q", query.content())],
-            )),
-            EngineYixuanFavorite::Arxiv => Ok(ExecuteAction::redirect_to_query(
-                "https://arxiv.org/search",
-                &[("query", query.content())],
-            )),
-            EngineYixuanFavorite::OpenReview => Ok(ExecuteAction::redirect_to_query(
-                "https://openreview.net/search",
-                &[("query", query.content())],
-            )),
-            EngineYixuanFavorite::Github => Ok(ExecuteAction::redirect_to_query(
-                "https://github.com/search",
-                &[("q", query.content())],
-            )),
-            EngineYixuanFavorite::Wiktionary => Ok(ExecuteAction::redirect_to_query(
-                "https://en.wiktionary.org/w/index.php",
-                &[("search", query.content())],
-            )),
-            EngineYixuanFavorite::MerriamWebster => Ok(ExecuteAction::Redirect(
-                url::Url::parse(&format!(
-                    "https://www.merriam-webster.com/dictionary/{}",
-                    query.content()
-                ))
-                .map(|url| url.to_string())
-                .unwrap_or_else(|_| "https://www.merriam-webster.com".to_string()),
-            )),
-            EngineYixuanFavorite::Oed => Ok(ExecuteAction::redirect_to_query(
-                "https://www.oed.com/search/dictionary",
-                &[("scope", "Entries"), ("q", query.content())],
-            )),
-            EngineYixuanFavorite::Perplexity => Ok(ExecuteAction::redirect_to_query(
-                "https://www.perplexity.ai/search/new",
-                &[("q", query.content())],
-            )),
-            EngineYixuanFavorite::ZiTools => Ok(ExecuteAction::Redirect(
-                url::Url::parse(&format!("https://zi.tools/zi/{}", query.content()))
-                    .map(|url| url.to_string())
-                    .unwrap_or_else(|_| "https://zi.tools".to_string()),
-            )),
-            EngineYixuanFavorite::Jisho => {
-                let url = url::Url::parse(&format!("https://jisho.org/search/{}", query.content()))
-                    .map(|url| url.to_string())
-                    .unwrap_or_else(|_| "https://jisho.org".to_string());
-                Ok(ExecuteAction::Redirect(url))
-            }
-            EngineYixuanFavorite::Zhihu => Ok(ExecuteAction::redirect_to_query(
-                "https://www.zhihu.com/search",
-                &[("q", query.content())],
-            )),
-            EngineYixuanFavorite::Douban => Ok(ExecuteAction::redirect_to_query(
-                "https://www.douban.com/search",
-                &[("q", query.content())],
-            )),
-            EngineYixuanFavorite::Bilibili => Ok(ExecuteAction::redirect_to_query(
-                "https://search.bilibili.com/all",
-                &[("keyword", query.content())],
-            )),
-            EngineYixuanFavorite::Weibo => Ok(ExecuteAction::redirect_to_query(
-                "https://s.weibo.com/weibo",
-                &[("q", query.content())],
-            )),
-            EngineYixuanFavorite::Xiaohongshu => Ok(ExecuteAction::redirect_to_query(
-                "https://www.xiaohongshu.com/search_result",
-                &[("keyword", query.content())],
-            )),
-            EngineYixuanFavorite::YouTube => Ok(ExecuteAction::redirect_to_query(
-                "https://www.youtube.com/results",
-                &[("search_query", query.content())],
-            )),
-        }
     }
 }

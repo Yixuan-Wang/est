@@ -1,0 +1,95 @@
+[[plugin.simple.rules]]
+name = "Google Scholar"
+template = "https://scholar.google.com/scholar?q={}"
+shortcut = ["gs", "scholar"]
+description = "Search Google Scholar"
+
+[[plugin.simple.rules]]
+name = "arXiv"
+template = "https://arxiv.org/search?query={}"
+shortcut = ["ax", "arxiv"]
+description = "Search arXiv papers"
+
+[[plugin.simple.rules]]
+name = "OpenReview"
+template = "https://openreview.net/search?query={}"
+shortcut = ["or", "openreview"]
+description = "Search OpenReview papers"
+
+[[plugin.simple.rules]]
+name = "GitHub"
+template = "https://github.com/search?q={}"
+shortcut = ["gh", "github"]
+description = "Search GitHub repositories"
+
+[[plugin.simple.rules]]
+name = "Wiktionary"
+template = "https://en.wiktionary.org/w/index.php?search={}"
+shortcut = ["wd", "wikt"]
+description = "Search Wiktionary definitions"
+
+[[plugin.simple.rules]]
+name = "Merriam-Webster"
+template = "https://www.merriam-webster.com/dictionary/{}"
+shortcut = ["mw", "merriamwebster"]
+description = "Look up words in Merriam-Webster dictionary"
+
+[[plugin.simple.rules]]
+name = "Oxford English Dictionary"
+template = "https://www.oed.com/search/dictionary?scope=Entries&q={}"
+shortcut = "oed"
+description = "Search Oxford English Dictionary"
+
+[[plugin.simple.rules]]
+name = "Perplexity"
+template = "https://www.perplexity.ai/search/new?q={}"
+shortcut = ["ppl", "perplexity"]
+description = "Search with Perplexity AI"
+
+[[plugin.simple.rules]]
+name = "ZiTools"
+template = "https://zi.tools/zi/{}"
+shortcut = ["zi", "zitools"]
+description = "Look up Chinese characters on ZiTools"
+
+[[plugin.simple.rules]]
+name = "Jisho"
+template = "https://jisho.org/search/{}"
+shortcut = ["ji", "jisho"]
+description = "Look up Japanese words on Jisho"
+
+[[plugin.simple.rules]]
+name = "Zhihu"
+template = "https://www.zhihu.com/search?q={}"
+shortcut = ["zh", "zhihu"]
+description = "Search Zhihu questions and answers"
+
+[[plugin.simple.rules]]
+name = "Douban"
+template = "https://www.douban.com/search?q={}"
+shortcut = ["db", "douban"]
+description = "Search Douban reviews and discussions"
+
+[[plugin.simple.rules]]
+name = "Bilibili"
+template = "https://search.bilibili.com/all?keyword={}"
+shortcut = ["bl", "bilibili"]
+description = "Search videos on Bilibili"
+
+[[plugin.simple.rules]]
+name = "Weibo"
+template = "https://s.weibo.com/weibo?q={}"
+shortcut = ["wb", "weibo"]
+description = "Search Weibo posts"
+
+[[plugin.simple.rules]]
+name = "Xiaohongshu"
+template = "https://www.xiaohongshu.com/search_result?keyword={}"
+shortcut = ["xhs", "xiaohongshu"]
+description = "Search Xiaohongshu posts"
+
+[[plugin.simple.rules]]
+name = "YouTube"
+template = "https://www.youtube.com/results?search_query={}"
+shortcut = ["yt", "youtube"]
+description = "Search YouTube videos"

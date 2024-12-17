@@ -137,7 +137,7 @@ static URL_BING_SEARCH_CHINA: &str = "https://cn.bing.com/search";
 
 impl Engine for EngineBing {
     fn execute(&self, query: &Query) -> Result<ExecuteAction> {
-        if self.is_china || query.residue().get(1) == Some(&"cn") {
+        if self.is_china || query.residue().first() == Some(&"cn") {
             return Ok(ExecuteAction::redirect_to_query(
                 URL_BING_SEARCH_CHINA,
                 &[("q", query.content())],

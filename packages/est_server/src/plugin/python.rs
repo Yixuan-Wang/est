@@ -87,7 +87,7 @@ impl EngineProminentPackages {
     fn search_fallback(&self, query: &Query) -> Result<ExecuteAction> {
         let handle = query
             .residue()
-            .get(1..)
+            .get(0..)
             .map(|parts| parts.join(" "))
             .map(|s| format!("{} ", s))
             .unwrap_or_default();
@@ -101,7 +101,7 @@ impl EngineProminentPackages {
 
 impl Engine for EngineProminentPackages {
     fn execute(&self, query: &Query) -> Result<ExecuteAction> {
-        let package = query.residue().get(1).ok_or(Fail::Incomplete)?;
+        let package = query.residue().first().ok_or(Fail::Incomplete)?;
         if let Some(base) = URL_PYTHON_PROMINENT_PACKAGES.get(package) {
             Ok(ExecuteAction::redirect_to_query(
                 base,

@@ -75,7 +75,7 @@ static MAP_JAVASCRIPT_HANDLE_TO_SITE: LazyLock<HashMap<&str, &str>> = LazyLock::
 
 impl EngineJavascript {
     fn search_fallback(&self, query: &Query) -> Result<ExecuteAction> {
-        if let Some(handle) = query.residue().get(1) {
+        if let Some(handle) = query.residue().first() {
             if MAP_JAVASCRIPT_HANDLE_TO_SITE.contains_key(handle) {
                 return Ok(ExecuteAction::redirect_to_query(
                     "https://google.com/search",
@@ -93,7 +93,7 @@ impl EngineJavascript {
 
         let handle = query
             .residue()
-            .get(1..)
+            .get(0..)
             .map(|parts| parts.join(" "))
             .map(|s| format!("{} ", s))
             .unwrap_or_default();
@@ -107,7 +107,7 @@ impl EngineJavascript {
 
 impl Engine for EngineJavascript {
     fn execute(&self, query: &Query) -> Result<ExecuteAction> {
-        match query.residue().get(1..) {
+        match query.residue().get(0..) {
             None | Some([]) | Some(["mdn"]) => Ok(ExecuteAction::redirect_to_query(
                 "https://developer.mozilla.org/en-US/search",
                 &[("q", query.content())],

@@ -105,8 +105,8 @@ pub enum ExecuteAction {
 impl ExecuteAction {
     /// A helper function to build a [`SearchAction::Redirect`] action with a string.
     #[inline]
-    pub fn redirect_to(url: &str) -> Self {
-        ExecuteAction::Redirect(Url::parse(url).unwrap().to_string())
+    pub fn redirect_to(url: &str) -> Option<Self> {
+        Some(ExecuteAction::Redirect(Url::parse(url).ok()?.to_string()))
     }
 
     /// A helper function to build a [`SearchAction::Redirect`] action with a base URL and an iterator of queries.

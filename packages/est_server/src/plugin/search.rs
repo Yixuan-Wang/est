@@ -290,8 +290,8 @@ impl Engine for EngineYixuanFavorite {
                 "https://en.wiktionary.org/w/index.php",
                 &[("search", query.content())],
             )),
-            EngineYixuanFavorite::MerriamWebster => Ok(ExecuteAction::redirect_to(
-                &url::Url::parse(&format!(
+            EngineYixuanFavorite::MerriamWebster => Ok(ExecuteAction::Redirect(
+                url::Url::parse(&format!(
                     "https://www.merriam-webster.com/dictionary/{}",
                     query.content()
                 ))
@@ -306,8 +306,8 @@ impl Engine for EngineYixuanFavorite {
                 "https://www.perplexity.ai/search/new",
                 &[("q", query.content())],
             )),
-            EngineYixuanFavorite::ZiTools => Ok(ExecuteAction::redirect_to(
-                &url::Url::parse(&format!("https://zi.tools/zi/{}", query.content()))
+            EngineYixuanFavorite::ZiTools => Ok(ExecuteAction::Redirect(
+                url::Url::parse(&format!("https://zi.tools/zi/{}", query.content()))
                     .map(|url| url.to_string())
                     .unwrap_or_else(|_| "https://zi.tools".to_string()),
             )),
@@ -315,7 +315,7 @@ impl Engine for EngineYixuanFavorite {
                 let url = url::Url::parse(&format!("https://jisho.org/search/{}", query.content()))
                     .map(|url| url.to_string())
                     .unwrap_or_else(|_| "https://jisho.org".to_string());
-                Ok(ExecuteAction::redirect_to(&url))
+                Ok(ExecuteAction::Redirect(url))
             }
             EngineYixuanFavorite::Zhihu => Ok(ExecuteAction::redirect_to_query(
                 "https://www.zhihu.com/search",

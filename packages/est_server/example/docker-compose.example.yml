@@ -2,7 +2,7 @@ version: '3'
 
 services:
   est:
-    image: tomyxw/est_server:latest
+    image: ghcr.io/yixuan-wang/est_server:monolith 
     restart: always
     ports:
       - ${PORT}:3000

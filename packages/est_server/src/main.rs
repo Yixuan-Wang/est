@@ -39,7 +39,7 @@ async fn main() {
 
     let plugin_python = plugin::python::PluginPython::new();
     let plugin_javascript = plugin::javascript::PluginJavascript;
-    let plugin_search = plugin::search::PluginSearch::new();
+    let plugin_search = plugin::search::PluginSearch::from_config(&config);
     let plugin_rust = plugin::rust::PluginRust::new();
 
     let plugin_simple = plugin::simple::PluginSimple::from_config(&config);

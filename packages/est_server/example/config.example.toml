@@ -1,3 +1,7 @@
+[plugin.search]
+default_engine = "duckduckgo"
+# ["google", "bing", "baidu", "sogou", "duckduckgo", "wiki"]
+
 [plugin.simple]
 
 [[plugin.simple.rules]]

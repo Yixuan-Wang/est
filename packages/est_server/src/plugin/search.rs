@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 
+use serde::Deserialize;
+use toml::Value as TomlValue;
+
 use crate::{
     common::Result,
     engine::{ArenaEngine, Engine, ExecuteAction},
@@ -22,17 +25,44 @@ impl CharExt for char {
     }
 }
 
-pub struct PluginSearch;
+#[derive(Deserialize)]
+pub struct PluginSearchConfig {
+    default_engine: Option<String>,
+}
 
-impl Default for PluginSearch {
+impl Default for PluginSearchConfig {
     fn default() -> Self {
-        Self::new()
+        PluginSearchConfig {
+            default_engine: None,
+        }
     }
+}
+
+pub struct PluginSearch {
+    config: PluginSearchConfig,
 }
 
 impl PluginSearch {
     pub fn new() -> Self {
-        PluginSearch
+        PluginSearch {
+            config: PluginSearchConfig::default(),
+        }
+    }
+
+    pub fn from_config(config: &TomlValue) -> Self {
+        let get_config = || -> Option<TomlValue> {
+            let config = config.get("plugin")?;
+            config.get("search").cloned()
+        };
+
+        let config = get_config()
+            .map(|v| v.try_into::<PluginSearchConfig>().ok())
+            .flatten()
+            .unwrap_or_default();
+
+        Self {
+            config,
+        }
     }
 
     // pub fn router_fallback<'r, 'q>(
@@ -77,6 +107,20 @@ impl PluginSearch {
             (String::from("wiki"), engine_wikipedia),
         ]));
 
+        let default_engine = { match &self.config.default_engine {
+            Some(engine) => match engine.as_str() {
+                "google" => engine_google,
+                "bing" => engine_bing,
+                "baidu" => engine_baidu,
+                "sogou" => engine_sogou,
+                "duckduckgo" => engine_ddg,
+                "wiki" => engine_wikipedia,
+                _ => engine_google,
+            },
+            None => engine_google,
+        } }.clone();
+
+
         let fallback = move |query: &Query| {
             if query.content().starts_with('!') {
                 engine_ddg_bang
@@ -85,7 +129,7 @@ impl PluginSearch {
             } else if query.content().chars().any(|c| c.is_cjk()) {
                 engine_bing_china
             } else {
-                engine_google
+                default_engine
             }
         };
 

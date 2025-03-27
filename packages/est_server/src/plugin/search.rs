@@ -185,6 +185,8 @@ impl Engine for EngineBing {
             return Ok(ExecuteAction::redirect_to_query(
                 URL_BING_SEARCH_CHINA,
                 &[("q", query.content())],
+                &[("form", "ESTB")],
+                &[("mkt", "zh-CN")],
             ));
         }
 

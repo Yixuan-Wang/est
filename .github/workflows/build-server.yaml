@@ -2,7 +2,9 @@ name: Build and Dockerize Server
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'ci-*'
   workflow_dispatch:
 
 jobs:
@@ -30,5 +32,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
+          file: ./packages/est_server/Dockerfile
+          context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -8,6 +8,7 @@ mod parse;
 pub struct Query {
     pub mention: SmallVec<[String; 1]>,
     pub content: String,
+    pub scope: Option<String>,
 }
 
 impl Query {
@@ -31,6 +32,7 @@ impl Query {
         Self {
             mention,
             content: self.content.clone(),
+            scope: self.scope.clone(),
         }
     }
 }
@@ -54,6 +56,7 @@ mod test {
         let reference = Query {
             mention: vec!["mention".to_string()].into(),
             content: "".to_string(),
+            scope: None,
         };
         let target = input.parse();
         assert_eq!(target, Ok(reference));

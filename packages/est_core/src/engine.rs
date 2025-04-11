@@ -1,4 +1,5 @@
 use crate::{AcceptanceErr, Instance, Query, Reaction};
+use cloze::ClozeScoped;
 use futures::{future::BoxFuture, FutureExt};
 use slotmap::{new_key_type, SlotMap};
 use std::{collections::HashMap, future::Future};
@@ -37,6 +38,7 @@ pub enum EngineNode {
     Alias(Alias),
     Namespace(Namespace),
     Cloze(Cloze),
+    ClozeScoped(ClozeScoped),
     Ortho(Ortho),
 }
 
@@ -46,6 +48,7 @@ impl EngineNode {
             Self::Alias(alias) => alias.accept(query, instance),
             Self::Namespace(namespace) => namespace.accept(query, instance),
             Self::Cloze(cloze) => cloze.accept(query, instance),
+            Self::ClozeScoped(cloze_scoped) => cloze_scoped.accept(query, instance),
             Self::Ortho(ortho) => ortho.accept(query, instance),
         }
     }
@@ -59,6 +62,7 @@ impl EngineNode {
             Self::Alias(alias) => alias.react(query, instance).boxed(),
             Self::Namespace(namespace) => namespace.react(query, instance).boxed(),
             Self::Cloze(cloze) => cloze.react(query, instance).boxed(),
+            Self::ClozeScoped(cloze_scoped) => cloze_scoped.react(query, instance).boxed(),
             Self::Ortho(ortho) => ortho.react(query, instance).boxed(),
         }
     }

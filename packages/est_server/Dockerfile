@@ -1,6 +1,6 @@
 ARG APP_NAME=est_server
 
-FROM rust:alpine AS builder
+FROM rust:latest AS builder
 
 WORKDIR /app
 COPY . /app

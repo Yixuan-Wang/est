@@ -3,9 +3,9 @@ ARG APP_NAME=est_server
 FROM rust:alpine AS builder
 
 WORKDIR /app
+COPY . /app
 
-RUN --mount=type=bind,source=.,target=/app \
-    cargo build --release
+RUN cargo build --release
 
 FROM gcr.io/distroless/cc-debian12 as runtime
 

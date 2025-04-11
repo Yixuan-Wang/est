@@ -1,8 +1,8 @@
-name: Build and Dockerize Monolith
+name: Build and Dockerize Server
 
 on:
   push:
-    branches: [ monolith ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -11,9 +11,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-        with:
-          ref: monolith
+        uses: actions/checkout@v4
       
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3

@@ -1,5 +1,6 @@
 [workspace]
 members = [
-    "packages/est_server",
+    "packages/est_core", "packages/est_server",
 ]
 resolver = "2"
+

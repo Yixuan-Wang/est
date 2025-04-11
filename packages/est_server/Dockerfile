@@ -5,7 +5,7 @@ FROM rust:alpine AS builder
 WORKDIR /app
 
 RUN --mount=type=bind,source=.,target=/app \
-    cargo build --locked --release
+    cargo build --release
 
 FROM gcr.io/distroless/cc-debian12 as runtime
 

@@ -1,8 +1,10 @@
-name: Build and Dockerize Monolith
+name: Build and Dockerize Server
 
 on:
   push:
-    branches: [ monolith ]
+    branches:
+      - main
+      - 'ci-*'
   workflow_dispatch:
 
 jobs:
@@ -11,9 +13,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-        with:
-          ref: monolith
+        uses: actions/checkout@v4
       
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -31,7 +31,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: packages/est_server
           push: true
+          file: ./packages/est_server/Dockerfile
+          context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -1,0 +1,19 @@
+[plugin.search]
+default_engine = "duckduckgo"
+# ["google", "bing", "baidu", "sogou", "duckduckgo", "wiki"]
+
+[plugin.simple]
+
+[[plugin.simple.rules]]
+name = "Google"
+template = "https://www.google.com/search?q={}"
+shortcut = "g"
+description = "Search with Google"
+suggestion = "https://www.google.com/complete/search?output=firefox&q={searchTerms}"
+
+[[plugin.simple.rules]]
+name = "Bing"
+template = "https://www.bing.com/search?q={}"
+shortcut = ["b"]
+description = "Search with Bing"
+suggestion = "https://www.bing.com/osjson.aspx?form=OSDJAS&query={searchTerms}"

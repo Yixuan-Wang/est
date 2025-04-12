@@ -24,7 +24,7 @@ export default defineNuxtConfig({
     routeRules: {
       '/search': { redirect: `${process.env.EST_SERVER_URL ?? "http://localhost:3000"}/search` },
       '/search.xml': { redirect: `${process.env.EST_SERVER_URL ?? "http://localhost:3000"}/search.xml` },
-      '/api/**': { proxy: { to: process.env.EST_SERVER_URL ?? "http://localhost:3000/**" } },
+      '/api/**': { proxy: { to: `${process.env.EST_SERVER_URL ?? "http://localhost:3000" }/**` } },
     }
   },
 

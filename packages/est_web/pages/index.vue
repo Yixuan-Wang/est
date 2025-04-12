@@ -1,5 +1,4 @@
 <script setup lang="tsx">
-import useEstEngines from '~/composables/est_engines';
 
 const searchBox = ref<string>('')
 const searchBoxEl = ref<HTMLDivElement | null>(null)
@@ -12,15 +11,22 @@ const suggestion = ref<{
   replace: (_: string) => string;
 }[]>([]);
 
-useEstEngines().then((engineList) => {
-  try {
-    console.log(engineList)
-    engines.value = engineList.data.value?.engines ?? []
-  }
-  catch (e) {
-    console.error('Error fetching engines:', e)
-  }
-})
+if (import.meta.client) {
+  $fetch<{ engines: string[] }>(`/api/experimental/engines`)
+    .then((engineList) => {
+      try {
+        engines.value = engineList.engines.filter(engine => engine && !engine.endsWith("_")).sort((a, b) => a.length - b.length) ?? []
+      }
+      catch (e) {
+        console.error('Error fetching engines:', e)
+      }
+    })
+    .catch((error) => {
+      console.error('Error fetching engines:', error)
+    })
+}
+
+
 
 const { height: heightSearchBox } = useElementBounding(searchBoxEl);
 const { height: heightDropdown } = useElementBounding(dropdownEl);

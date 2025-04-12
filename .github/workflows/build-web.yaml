@@ -29,18 +29,22 @@ jobs:
         with:
           images: ghcr.io/${{ github.actor }}/est_web
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          bun-version: latest
+          node-version: '20'
+          
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+          run_install: false
 
-      - name: Bun build
+      - name: PNPM build
         run: |
           cd packages/est_web
-          bun install
-          bun run build
-          cd .output
-          bun install --production --cwd server
+          pnpm install
+          EST_SERVER_URL=http://est_server:3000 pnpm build
 
       - name: Docker build and push
         uses: docker/build-push-action@v5

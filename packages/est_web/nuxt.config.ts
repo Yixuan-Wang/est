@@ -21,7 +21,7 @@ export default defineNuxtConfig({
 
   nitro: {
     routeRules: {
-      '/search': { redirect: "http://localhost:3000/search" },
+      '/search': { redirect: `${process.env.EST_SERVER_URL ?? "http://localhost:3000"}/search` },
     }
   },
 

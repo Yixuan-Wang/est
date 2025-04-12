@@ -39,6 +39,8 @@ jobs:
           cd packages/est_web
           bun install
           bun run build
+          cd .output
+          bun install --production --cwd server
 
       - name: Docker build and push
         uses: docker/build-push-action@v5

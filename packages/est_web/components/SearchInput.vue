@@ -1,14 +1,11 @@
+<!-- eslint-disable @typescript-eslint/unified-signatures -->
 <script setup lang="tsx">
-interface SearchInputProps {
-  modelValue: string;
-}
-
 interface SearchInputEmits {
-  (e: 'update:modelValue', value: string): void;
   (e: 'search'): void;
+  (e: 'autocomplete'): void;
 }
 
-const props = defineProps<SearchInputProps>();
+const modelValue = defineModel<string>();
 const emit = defineEmits<SearchInputEmits>();
 
 const inputEl = ref<HTMLDivElement | null>(null);
@@ -17,10 +14,25 @@ const overlayEl = ref<HTMLDivElement | null>(null);
 // Handle input changes for contenteditable div
 function handleInput(_e: Event) {
   if (inputEl.value) {
-    emit('update:modelValue', inputEl.value.textContent || '');
+    modelValue.value = inputEl.value.textContent || '';
     syncScrollPosition();
   }
 }
+
+watch(modelValue, (newValue) => {
+  if (inputEl.value && newValue && newValue !== inputEl.value.textContent) {
+    inputEl.value.textContent = newValue;
+
+    nextTick(() => {
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(inputEl.value!);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    });
+  }
+});
 
 // Synchronize scroll position between input and overlay
 function syncScrollPosition() {
@@ -31,14 +43,14 @@ function syncScrollPosition() {
 
 // Split the input into segments for highlighting
 const segments = computed(() => {
-  if (!props.modelValue) return [
+  if (!modelValue.value) return [
     { text: '@py', highlighted: 'text-gray-400' },
     { text: ' ', highlighted: '' },
     { text: 'print', highlighted: 'text-gray-300' },
   ]
   
   // Split the input by spaces, but keep all spaces inside `parts`
-  const parts = props.modelValue.split(/(\s+)/).filter(part => part.length > 0)
+  const parts = modelValue.value.split(/(\s+)/)
 
   return parts.map((part) => {
     let highlighted;
@@ -65,10 +77,13 @@ function handleKeydown(e: KeyboardEvent) {
     emit('search');
   } else if (e.key === 'Escape') {
     e.preventDefault();
-    emit('update:modelValue', '');
+    modelValue.value = '';
     if (inputEl.value) {
       inputEl.value.textContent = '';
     }
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    emit('autocomplete');
   }
 }
 
@@ -80,7 +95,7 @@ defineExpose({
 
 <template>
   <div
-    class="relative w-full rounded-lg shadow-md"
+    class="relative w-full"
     role="search"
     @click="focusInput"
   >
@@ -90,7 +105,8 @@ defineExpose({
       contenteditable="true"
       spellcheck="false"
       autocomplete="off"
-      class="w-full px-4 py-2 text-lg bg-white bg-opacity-80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent relative whitespace-nowrap overflow-x-auto overflow-y-hidden"
+      autofocus="true"
+      class="w-full px-4 py-2 z-1 text-lg relative whitespace-nowrap overflow-x-auto overflow-y-hidden"
       @input="handleInput"
       @scroll="syncScrollPosition"
       @keydown="handleKeydown"
@@ -115,5 +131,6 @@ defineExpose({
 [contenteditable] {
   color: transparent;
   caret-color: black;
+  outline: none !important;
 }
 </style>

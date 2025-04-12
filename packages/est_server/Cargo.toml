@@ -7,5 +7,6 @@ edition = "2024"
 axum = "0.8.3"
 est_core = { version = "*", path = "../est_core" }
 serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
 toml = "0.8.20"

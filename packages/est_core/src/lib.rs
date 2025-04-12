@@ -21,6 +21,14 @@ impl Instance {
             .ok_or(ReactionErr::NotAccepted(AcceptanceErr::NoEngine))
     }
 
+    pub fn iter_engine_ids(&self) -> impl Iterator<Item = &String> {
+        self.engine_registry.iter_ids()
+    }
+
+    pub fn describe(&self, id: &str) -> Option<String> {
+        self.engine_registry.description(id).map(String::from)
+    }
+
     pub async fn react(&self, mut query: Query) -> Reaction {
         let mut engine = self.engine(query.mention_head())?;
 

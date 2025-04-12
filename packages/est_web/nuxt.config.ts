@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
-  modules: ['@nuxt/eslint', '@nuxt/fonts', '@nuxt/icon', '@unocss/nuxt'],
+  modules: ['@nuxt/eslint', '@nuxt/fonts', '@nuxt/icon', '@unocss/nuxt', '@vueuse/nuxt'],
   app: {
     head: {
       title: 'Est',
@@ -24,6 +24,7 @@ export default defineNuxtConfig({
     routeRules: {
       '/search': { redirect: `${process.env.EST_SERVER_URL ?? "http://localhost:3000"}/search` },
       '/search.xml': { redirect: `${process.env.EST_SERVER_URL ?? "http://localhost:3000"}/search.xml` },
+      '/api/**': { proxy: { to: process.env.EST_SERVER_URL ?? "http://localhost:3000/**" } },
     }
   },
 

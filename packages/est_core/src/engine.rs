@@ -88,6 +88,23 @@ impl EngineRegistry {
         self.ids.get(id).and_then(|key| self.engines.get(*key))
     }
 
+    pub(crate) fn description(
+        &self,
+        id: impl AsRef<str>,
+    ) -> Option<&str> {
+        let id = id.as_ref();
+        self.ids.get(id).and_then(|key| {
+            self.description
+                .get(key)
+                .map(Option::as_deref)
+                .flatten()
+        })
+    }
+
+    pub(crate) fn iter_ids(&self) -> impl Iterator<Item = &String> {
+        self.ids.keys()
+    }
+
     pub(crate) fn alias(
         &mut self,
         id: impl AsRef<str>,

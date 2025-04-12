@@ -1,12 +1,12 @@
 use std::sync::Arc;
-
 use axum::{
     extract::{Query, State},
     http::StatusCode,
     response::{IntoResponse, Redirect, Response},
 };
 use serde::Deserialize;
-use tokio::sync::RwLock;
+
+use crate::AppState;
 
 #[derive(Deserialize)]
 pub struct SearchUrlQuery {
@@ -14,7 +14,7 @@ pub struct SearchUrlQuery {
 }
 
 pub async fn handle_search(
-    State(instance): State<Arc<RwLock<est_core::Instance>>>,
+    State(state): State<Arc<AppState>>,
     Query(url_query): Query<SearchUrlQuery>,
 ) -> Result<Response, (StatusCode, String)> {
     let url_query = url_query.q;
@@ -24,7 +24,7 @@ pub async fn handle_search(
     // instance.read().await.react()
 
     use est_core::{ReactionErr, ReactionVerb};
-    let reaction = instance
+    let reaction = state.instance
         .read()
         .await
         .react(query)

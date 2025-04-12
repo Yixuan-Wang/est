@@ -37,6 +37,7 @@ jobs:
       - name: Bun build
         run: |
           cd packages/est_web
+          bun install
           bun run build
 
       - name: Docker build and push

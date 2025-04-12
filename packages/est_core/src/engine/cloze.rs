@@ -44,7 +44,6 @@ impl Engine for ClozeScoped {
         query: &'q Query,
         _instance: &'i Instance,
     ) -> impl Future<Output = Reaction> + Send + 'e {
-        dbg!(&query);
         let url = if let Some(scope) = query.scope.as_ref() {
             self.template_scoped.replace("{!}", scope).replace("{}", query.content())
         } else {

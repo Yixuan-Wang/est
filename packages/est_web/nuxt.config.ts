@@ -11,6 +11,7 @@ export default defineNuxtConfig({
       },
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'search', type: 'application/opensearchdescription+xml', href: '/search.xml', title: 'Est' },
       ]
     }
   },

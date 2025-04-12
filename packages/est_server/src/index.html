@@ -6,19 +6,49 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="search" type="application/opensearchdescription+xml" href="/search.xml" title="Est">
+    <style>
+      body {
+        font-family: monospace;
+        margin-top: 39dvh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        background-color: light-dark(#ffffff, #121212);
+        color: light-dark(#000000, #ffffff);
+      }
+      h1 {
+        margin: 0;
+        font-size: 5em;
+      }
+      input {
+        padding: 0.5em;
+        border: 1px solid light-dark(#ccc, #444);
+        border-radius: 4px;
+        font-size: 1em;
+        font-family: sans-serif;
+        background-color: light-dark(#ffffff, #333);
+        color: light-dark(#000000, #ffffff);
+      }
+      button {
+        padding: 0.5em 1em;
+        background-color: light-dark(#007bff, #0056b3);
+        color: light-dark(#ffffff, #ffffff);
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        font-size: 1em;
+        font-family: monospace;
+      }
+    </style>
   </head>
-  <body style="font-family: monospace; margin-top: 39dvh; display: flex; justify-content: center; align-items: center; text-align: center;">
-    <main style="display: flex; flex-direction: column; gap: 1em;">
-      <h1 style="margin: 0">Est</h1>
-      <form action="/search" method="get">
-        <div class="grid" style="grid-template-columns: 1fr auto;">
-          <input type="text" name="q" placeholder="@some.plugin What you want to search..." autofocus>
-          <button type="submit" class="primary">Search</button>
-        </div>
+  <body>
+    <main style="display:flex;flex-direction:column;gap:1em;align-items:center;width:100%;">
+      <h1>Est</h1>
+      <form action="/search" method="get" style="width:75%;min-width:256px;max-width:65ch;display:grid;grid-template-columns:1fr auto;gap:0.5em;">
+        <input type="text" name="q" placeholder="@google Hello world!" autofocus>
+        <button type="submit" class="primary">Search</button>
       </form>
-      <article>
-        A full frontend will be available soon.
-      </article>
     </main>
   </body>
 </html>

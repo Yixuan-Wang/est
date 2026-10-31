@@ -19,14 +19,27 @@ async fn main_route_placeholder() -> Html<&'static str> {
     Html(include_str!("./index.html"))
 }
 
+/// Fallback for `EST_PUBLIC_URL`, matching the address the server binds to.
+const DEFAULT_PUBLIC_URL: &str = "http://localhost:3000";
+
 /// Builds the OpenSearch description document from `EST_PUBLIC_URL`.
 ///
 /// Chrome rejects OpenSearch descriptions whose search template is not an
 /// absolute http(s) URL, and the server cannot reliably know the address it is
-/// reached at (e.g. behind a reverse proxy), so the public URL must be set
-/// explicitly.
+/// reached at (e.g. behind a reverse proxy), so the public URL is configured
+/// explicitly. When unset, it defaults to [`DEFAULT_PUBLIC_URL`] for local use.
 fn build_opensearch() -> String {
-    let public_url = std::env::var("EST_PUBLIC_URL").unwrap_or_default();
+    let public_url = match std::env::var("EST_PUBLIC_URL") {
+        Ok(url) if !url.trim().is_empty() => url,
+        _ => {
+            eprintln!(
+                "warning: EST_PUBLIC_URL is not set, defaulting to {DEFAULT_PUBLIC_URL}; \
+                 browsers on other machines cannot use Est as a search engine \
+                 until it is set to the URL Est is served at"
+            );
+            DEFAULT_PUBLIC_URL.to_string()
+        }
+    };
     let origin = public_url.trim().trim_end_matches('/');
 
     let host = origin
@@ -34,7 +47,7 @@ fn build_opensearch() -> String {
         .or_else(|| origin.strip_prefix("http://"));
     if host.is_none_or(str::is_empty) {
         panic!(
-            "EST_PUBLIC_URL must be set to the absolute http(s) URL Est is served at, \
+            "EST_PUBLIC_URL must be the absolute http(s) URL Est is served at, \
              e.g. EST_PUBLIC_URL=https://est.example.com (got {public_url:?})"
         );
     }

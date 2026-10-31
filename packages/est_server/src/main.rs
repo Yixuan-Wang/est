@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
-use axum::{response::{Html, Response, IntoResponse}, routing::get, Router};
+use axum::{
+    http::{header, HeaderMap, HeaderValue},
+    response::{Html, IntoResponse, Response},
+    routing::get,
+    Router,
+};
 use tokio::sync::RwLock;
 
 mod config;
@@ -13,16 +18,41 @@ async fn main_route_placeholder() -> Html<&'static str> {
     Html(include_str!("./index.html"))
 }
 
-async fn opensearch_placeholder() -> Response {
-    let xml = include_str!("./search.xml");
+/// Serves the OpenSearch description document.
+///
+/// Chrome rejects OpenSearch descriptions whose search template is not an
+/// absolute http(s) URL, so the origin is filled in at request time: from
+/// `EST_PUBLIC_URL` if set, otherwise from the (forwarded) request headers.
+async fn opensearch(headers: HeaderMap) -> Response {
+    let origin = std::env::var("EST_PUBLIC_URL")
+        .ok()
+        .filter(|url| !url.is_empty())
+        .unwrap_or_else(|| {
+            let header = |name: &str| {
+                headers
+                    .get(name)
+                    .and_then(|value| value.to_str().ok())
+                    .and_then(|value| value.split(',').next())
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+            };
+            let host = header("x-forwarded-host")
+                .or_else(|| header("host"))
+                .unwrap_or("localhost:3000");
+            let proto = header("x-forwarded-proto").unwrap_or("http");
+            format!("{proto}://{host}")
+        });
 
-    // Return the XML as a response
-    let mut response = xml.into_response();
-    response.headers_mut().insert(
-        axum::http::header::CONTENT_TYPE,
-        axum::http::HeaderValue::from_static("application/xml; charset=utf-8"),
-    );
-    response
+    let xml = include_str!("./search.xml").replace("{origin}", origin.trim_end_matches('/'));
+
+    (
+        [(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/opensearchdescription+xml; charset=utf-8"),
+        )],
+        xml,
+    )
+        .into_response()
 }
 
 pub struct AppState {
@@ -39,7 +69,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(main_route_placeholder))
         .route("/search", get(handle_search))
-        .route("/search.xml", get(opensearch_placeholder))
+        .route("/search.xml", get(opensearch))
         .nest("/experimental", experimental::router())
         .with_state(state.clone());
 

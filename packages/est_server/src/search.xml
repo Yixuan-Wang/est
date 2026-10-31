@@ -3,6 +3,6 @@
   <ShortName>Est</ShortName>
   <Description>Yixuan's Extensible Search Tool</Description>
   <InputEncoding>UTF-8</InputEncoding>
-  <Url type="text/html" template="/search?q={searchTerms}"/>
+  <Url type="text/html" template="{origin}/search?q={searchTerms}"/>
   <Url type="application/x-suggestions+json" template="https://ac.duckduckgo.com/ac/?q={searchTerms}&amp;type=list"/>
 </OpenSearchDescription>

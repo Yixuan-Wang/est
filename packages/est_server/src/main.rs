@@ -29,17 +29,10 @@ const DEFAULT_PUBLIC_URL: &str = "http://localhost:3000";
 /// reached at (e.g. behind a reverse proxy), so the public URL is configured
 /// explicitly. When unset, it defaults to [`DEFAULT_PUBLIC_URL`] for local use.
 fn build_opensearch() -> String {
-    let public_url = match std::env::var("EST_PUBLIC_URL") {
-        Ok(url) if !url.trim().is_empty() => url,
-        _ => {
-            eprintln!(
-                "warning: EST_PUBLIC_URL is not set, defaulting to {DEFAULT_PUBLIC_URL}; \
-                 browsers on other machines cannot use Est as a search engine \
-                 until it is set to the URL Est is served at"
-            );
-            DEFAULT_PUBLIC_URL.to_string()
-        }
-    };
+    let public_url = std::env::var("EST_PUBLIC_URL")
+        .ok()
+        .filter(|url| !url.trim().is_empty())
+        .unwrap_or_else(|| DEFAULT_PUBLIC_URL.to_string());
     let origin = public_url.trim().trim_end_matches('/');
 
     let host = origin

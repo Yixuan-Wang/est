@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use axum::{
-    http::{header, HeaderMap, HeaderValue},
+    extract::State,
+    http::{header, HeaderValue},
     response::{Html, IntoResponse, Response},
     routing::get,
     Router,
@@ -18,45 +19,43 @@ async fn main_route_placeholder() -> Html<&'static str> {
     Html(include_str!("./index.html"))
 }
 
-/// Serves the OpenSearch description document.
+/// Builds the OpenSearch description document from `EST_PUBLIC_URL`.
 ///
 /// Chrome rejects OpenSearch descriptions whose search template is not an
-/// absolute http(s) URL, so the origin is filled in at request time: from
-/// `EST_PUBLIC_URL` if set, otherwise from the (forwarded) request headers.
-async fn opensearch(headers: HeaderMap) -> Response {
-    let origin = std::env::var("EST_PUBLIC_URL")
-        .ok()
-        .filter(|url| !url.is_empty())
-        .unwrap_or_else(|| {
-            let header = |name: &str| {
-                headers
-                    .get(name)
-                    .and_then(|value| value.to_str().ok())
-                    .and_then(|value| value.split(',').next())
-                    .map(str::trim)
-                    .filter(|value| !value.is_empty())
-            };
-            let host = header("x-forwarded-host")
-                .or_else(|| header("host"))
-                .unwrap_or("localhost:3000");
-            let proto = header("x-forwarded-proto").unwrap_or("http");
-            format!("{proto}://{host}")
-        });
+/// absolute http(s) URL, and the server cannot reliably know the address it is
+/// reached at (e.g. behind a reverse proxy), so the public URL must be set
+/// explicitly.
+fn build_opensearch() -> String {
+    let public_url = std::env::var("EST_PUBLIC_URL").unwrap_or_default();
+    let origin = public_url.trim().trim_end_matches('/');
 
-    let xml = include_str!("./search.xml").replace("{origin}", origin.trim_end_matches('/'));
+    let host = origin
+        .strip_prefix("https://")
+        .or_else(|| origin.strip_prefix("http://"));
+    if host.is_none_or(str::is_empty) {
+        panic!(
+            "EST_PUBLIC_URL must be set to the absolute http(s) URL Est is served at, \
+             e.g. EST_PUBLIC_URL=https://est.example.com (got {public_url:?})"
+        );
+    }
 
+    include_str!("./search.xml").replace("{origin}", origin)
+}
+
+async fn opensearch(State(state): State<Arc<AppState>>) -> Response {
     (
         [(
             header::CONTENT_TYPE,
             HeaderValue::from_static("application/opensearchdescription+xml; charset=utf-8"),
         )],
-        xml,
+        state.opensearch.clone(),
     )
         .into_response()
 }
 
 pub struct AppState {
     instance: RwLock<est_core::Instance>,
+    opensearch: String,
 }
 
 #[tokio::main]
@@ -64,6 +63,7 @@ async fn main() {
     let instance = RwLock::new(config::build());
     let state = Arc::new(AppState {
         instance,
+        opensearch: build_opensearch(),
     });
 
     let app = Router::new()
